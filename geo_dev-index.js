@@ -231,13 +231,26 @@ exports.handler = async(event, context, callback) => {
         keywords = "COALESCE(features[1].properties.keywords.fr, 'N/A') AS keywords";
         title = "COALESCE(features[1].properties.title.fr, 'N/A') AS title";
         description = "COALESCE(features[1].properties.description.fr, 'N/A') AS description";
-        organisation = "COALESCE(CAST(json_extract(json_array_get(json_parse(features[1].properties.contact), 0), '$.organisation.fr') AS VARCHAR), 'N/A') AS organisation";
+        
+        try {
+            var test_fr = "COALESCE(json_parse(features[1].properties.contact), 'N/A') AS description";;
+        } catch (error) {
+            callback(new Error("Error when parsing GEOJSON: " + test_fr + " with message: " + error));
+        }
+        
+        /*
+        * json_parse no longer works 2021-09-24
+        * organisation = "COALESCE(CAST(json_extract(json_array_get(json_parse(CAST(features[1].properties.contact AS VARCHAR), 0), '$.organisation.fr') AS VARCHAR), 'N/A') AS organisation";
+        */
+        
+        var organisation_template = "COALESCE(CAST(features[1].properties.contact[1].organisation.fr AS VARCHAR), 'N/A')";
+        organisation = organisation_template + " AS organisation";
         
         keyword_search = "regexp_like(LOWER(features[1].properties.keywords.fr), '" + keyword + "')";
         description_search = "regexp_like(LOWER(features[1].properties.description.fr), '" + keyword + "')";
         title_search = "regexp_like(LOWER(features[1].properties.title.fr), '" + keyword + "')";
-        organisation_search = "regexp_like(COALESCE(CAST(json_extract(json_array_get(json_parse(LOWER(features[1].properties.contact)), 0), '$.organisation.fr') AS VARCHAR), 'N/A'), '" + keyword + "')";
-        organisation_filter = "regexp_like(COALESCE(CAST(json_extract(json_array_get(json_parse(LOWER(features[1].properties.contact)), 0), '$.organisation.fr') AS VARCHAR), 'N/A'), '" + org + "')";
+        organisation_search = "regexp_like(" + organisation_template + ", '" + keyword + "')";
+        organisation_filter = "regexp_like(" + organisation_template + ", '" + org + "')";
         type_search = "(regexp_like(LOWER(features[1].properties.type), '" + types + "') OR regexp_like(COALESCE(CAST(json_extract(json_array_get(json_parse(LOWER(features[1].properties.options)), 0), '$.description.fr') AS VARCHAR), 'N/A'), '" + types + "'))";
         
     } else {
@@ -245,13 +258,20 @@ exports.handler = async(event, context, callback) => {
         keywords = "COALESCE(features[1].properties.keywords.en, 'N/A') AS keywords";
         title = "COALESCE(features[1].properties.title.en, 'N/A') AS title";
         description = "COALESCE(features[1].properties.description.en, 'N/A') AS description";
-        organisation = "COALESCE(CAST(json_extract(json_array_get(json_parse(features[1].properties.contact), 0), '$.organisation.en') AS VARCHAR), 'N/A') AS organisation";
+        
+        /*
+        * json_parse no longer works 2021-09-24
+        * organisation = "COALESCE(CAST(json_extract(json_array_get(json_parse(features[1].properties.contact), 0), '$.organisation.en') AS VARCHAR), 'N/A') AS organisation";
+        */
+        
+        var organisation_template = "COALESCE(CAST(features[1].properties.contact[1].organisation.en AS VARCHAR), 'N/A')";
+        organisation = organisation_template + " AS organisation";
         
         keyword_search = "regexp_like(LOWER(features[1].properties.keywords.en), '" + keyword + "')";
         description_search = "regexp_like(LOWER(features[1].properties.description.en), '" + keyword + "')";
         title_search = "regexp_like(LOWER(features[1].properties.title.en), '" + keyword + "')";
-        organisation_search = "regexp_like(COALESCE(CAST(json_extract(json_array_get(json_parse(LOWER(features[1].properties.contact)), 0), '$.organisation.en') AS VARCHAR), 'N/A'), '" + keyword + "')";
-        organisation_filter = "regexp_like(COALESCE(CAST(json_extract(json_array_get(json_parse(LOWER(features[1].properties.contact)), 0), '$.organisation.en') AS VARCHAR), 'N/A'), '" + org + "')";
+        organisation_search = "regexp_like(" + organisation_template + ", '" + keyword + "')";
+        organisation_filter = "regexp_like(" + organisation_template + ", '" + org + "')";
         type_search = "(regexp_like(LOWER(features[1].properties.type), '" + types + "') OR regexp_like(COALESCE(CAST(json_extract(json_array_get(json_parse(LOWER(features[1].properties.options)), 0), '$.description.en') AS VARCHAR), 'N/A'), '" + types + "'))";
         
     }
